@@ -107,7 +107,7 @@ class ConversationsTest extends TestCase
         $this->actingAs($this->ahmed);
 
         $response = $this->getJson(route('v1.conversations.messages.index', Conversation::first()->id));
-$response->dump();
+
         $response->assertSuccessful();
         $readAt = $response->json('data.0.read_at');
         $this->assertNotNull($readAt);
