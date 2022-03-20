@@ -10,6 +10,24 @@ class Conversation extends Model
 {
     use HasFactory;
 
+    public function theOtherPartyOf(User $participant)
+    {
+        return $this
+            ->participants
+            ->filter(fn($party) => $party->id !== $participant->id)
+            ->first();
+    }
+
+    public function lastMessage()
+    {
+        return $this->hasOne(Message::class)->latestOfMany();
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
     public function conversationParticipants()
     {
         return $this->hasMany(ConversationParticipant::class);
