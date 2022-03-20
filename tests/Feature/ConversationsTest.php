@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -27,17 +28,17 @@ class ConversationsTest extends TestCase
         Message::compose()
             ->from($this->ahmed)
             ->to($this->mohamed)
-            ->send('Hi, Mohamed. Can you please investigate the previous issue reported on Rollbar?');
+            ->send($this->msg1 = 'Hi, Mohamed. Can you please investigate the previous issue reported on Rollbar?');
 
         Message::compose()
             ->from($this->mohamed)
             ->to($this->ahmed)
-            ->send('Hi, Ahmed. Okay I will handle it.');
+            ->send($this->msg2 = 'Hi, Ahmed. Okay I will handle it.');
 
         Message::compose()
             ->from($this->ahmed)
             ->to($this->mohamed)
-            ->send('Great thank you.');
+            ->send($this->msg3 = 'Great thank you.');
 
         Message::compose()
             ->from($this->ahmed)
@@ -56,9 +57,63 @@ class ConversationsTest extends TestCase
         $response->assertJsonStructure(['data' => ['*' => [
             'id',
             'name',
-            'last_message' => ['id', 'content', 'is_read', 'created_at'],
+            'last_message' => [
+                'id',
+                'sender' => [
+                    'id',
+                    'name',
+                ],
+                'content',
+                'read_at',
+                'created_at',
+            ],
         ]]]);
         $response->assertJsonPath('data.0.name', 'Mohamed Shahawi');
         $response->assertJsonPath('data.0.last_message.content', 'Great thank you.');
+    }
+
+    public function test_it_lists_conversation_messages()
+    {
+        $this->actingAs($this->ahmed);
+
+        $response = $this->getJson(route('v1.conversations.messages.index', Conversation::first()->id));
+
+        $response->assertSuccessful();
+        $response->assertJsonStructure(['data' => ['*' => [
+            'id',
+            'sender' => ['id', 'name'],
+            'content',
+            'read_at',
+            'created_at',
+        ]]]);
+        $response->assertJsonPath('data.0.content', $this->msg3);
+        $response->assertJsonPath('data.1.content', $this->msg2);
+        $response->assertJsonPath('data.2.content', $this->msg1);
+    }
+
+    public function test_it_mark_message_as_read()
+    {
+        $this->actingAs($this->mohamed);
+
+        $conversation = Conversation::first();
+        $lastMessage = $conversation->messages->last();
+        $response = $this->postJson(
+            route('v1.conversations.messages.markAsRead', [$conversation->id, $lastMessage->id])
+        );
+        $response->assertNoContent();
+        $lastMessage->refresh();
+        $this->assertNotNull($lastMessage->read_at);
+
+        $this->actingAs($this->ahmed);
+
+        $response = $this->getJson(route('v1.conversations.messages.index', Conversation::first()->id));
+$response->dump();
+        $response->assertSuccessful();
+        $readAt = $response->json('data.0.read_at');
+        $this->assertNotNull($readAt);
+        $readAt = $response->json('data.1.read_at');
+        $this->assertNull($readAt);
+        $readAt = $response->json('data.2.read_at');
+        $this->assertNotNull($readAt);
     }
 }

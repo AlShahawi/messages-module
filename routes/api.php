@@ -21,6 +21,12 @@ Route::prefix('v1')->group(function () {
 
         Route::get('conversations', [ConversationsController::class, 'index'])
             ->name('v1.conversations.index');
+
+        Route::get('conversations/{conversation}/messages', [ConversationsController::class, 'messages'])
+            ->name('v1.conversations.messages.index');
+
+        Route::post('conversations/{conversation}/messages/{message}/markAsRead', [ConversationsController::class, 'markAsRead'])
+            ->name('v1.conversations.messages.markAsRead');
     });
 
     Route::post('login', [AuthController::class, 'login'])->name('v1.login');

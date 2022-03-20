@@ -16,8 +16,10 @@ class MessageResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'sender' => new UserResource($this->whenLoaded('sender')),
             'content' => $this->content,
-            'is_read' => !! $this->read_at,
+            // if the current user is the sender for this message, then display when was the message read.
+            'read_at' => $this->sender_id === $request->user()->id ? $this->read_at : null,
             // return creation date in standard format, let the front-end format it whatever he wants.
             'created_at' => $this->created_at,
         ];

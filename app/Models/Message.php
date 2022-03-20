@@ -8,12 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
+    use HasFactory;
+
     const UPDATED_AT = null;
 
-    use HasFactory;
+    protected $casts = ['read_at' => 'datetime'];
 
     public static function compose()
     {
         return new MessageSender;
+    }
+
+    public function sender()
+    {
+        return $this->belongsTo(User::class);
     }
 }
