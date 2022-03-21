@@ -37,9 +37,10 @@ class ConversationsController extends Controller
     {
         $conversation
             ->messages()
-            ->where('id', '<=', $message->id)
-            ->where('sender_id', '<>', $request->user()->id)
-            ->update(['read_at' => now()]);
+            ->beforeMessage($message)
+            ->whereUnread($message)
+            ->whereRecipientIs($request->user())
+            ->markAsRead();
 
         return response(null, Response::HTTP_NO_CONTENT);
     }

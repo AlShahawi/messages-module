@@ -91,7 +91,7 @@ class ConversationsTest extends TestCase
         $response->assertJsonPath('data.2.content', $this->msg1);
     }
 
-    public function test_it_mark_message_as_read()
+    public function test_it_mark_message_as_read_alongside_all_preceding_messages()
     {
         $this->actingAs($this->mohamed);
 
@@ -104,16 +104,21 @@ class ConversationsTest extends TestCase
         $lastMessage->refresh();
         $this->assertNotNull($lastMessage->read_at);
 
-        $this->actingAs($this->ahmed);
+        // Assert that messages sent to Mohamed marked as read.
+        $messagesReadByMohamed = Message::query()
+            ->whereSenderIs($this->ahmed)
+            ->whereRead()
+            ->count();
 
-        $response = $this->getJson(route('v1.conversations.messages.index', Conversation::first()->id));
+        $this->assertEquals(2, $messagesReadByMohamed);
 
-        $response->assertSuccessful();
-        $readAt = $response->json('data.0.read_at');
-        $this->assertNotNull($readAt);
-        $readAt = $response->json('data.1.read_at');
-        $this->assertNull($readAt);
-        $readAt = $response->json('data.2.read_at');
-        $this->assertNotNull($readAt);
+        // Assert that message sent to Ahmed remain unread.
+        $messagesReadByAhmed = Message::query()
+            ->whereSenderIs($this->mohamed)
+            ->whereRead()
+            ->count();
+
+        $this->assertEquals(0, $messagesReadByAhmed);
+
     }
 }
