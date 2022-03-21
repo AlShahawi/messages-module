@@ -22,6 +22,9 @@ Route::prefix('v1')->group(function () {
         Route::get('conversations', [ConversationsController::class, 'index'])
             ->name('v1.conversations.index');
 
+        Route::get('conversations/search', [ConversationsController::class, 'search'])
+            ->name('v1.conversations.search');
+
         Route::get('conversations/{conversation}/messages', [ConversationsController::class, 'messages'])
             ->name('v1.conversations.messages.index');
 

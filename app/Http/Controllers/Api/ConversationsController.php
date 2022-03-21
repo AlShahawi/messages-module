@@ -22,6 +22,21 @@ class ConversationsController extends Controller
         return ConversationResource::collection($conversations);
     }
 
+    public function search(Request $request)
+    {
+        $request->validate([
+            'query'=> ['required', 'string', 'min:6'],
+        ]);
+
+        $conversations = Conversation::query()
+            ->matchesQueryForParticipant($request->query('query'), $request->user())
+            ->limit(25) // limit search results, for optimization purposes until necessary.
+            ->get();
+
+        // TODO: it's better to wrap the result into a transformer.
+        return ['data' => $conversations];
+    }
+
     public function messages(Request $request, Conversation $conversation)
     {
         $messages = $conversation
