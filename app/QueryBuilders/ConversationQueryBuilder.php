@@ -9,7 +9,7 @@ class ConversationQueryBuilder extends Builder
 {
     public function matchesQueryForParticipant(string $query, User $participant)
     {
-        $this
+        return $this
             ->select([
                 'conversations.id',
                 'participant.id as participant_id',
@@ -28,10 +28,7 @@ class ConversationQueryBuilder extends Builder
                     ->orWhereFulltext('messages.content', $query);
             })
             ->orderByRaw("match (`participant`.`name`) against (? in natural language mode) desc", [$query])
-            ->orderByRaw("match (`messages`.`content`) against (? in natural language mode) desc", [$query])
-        ;
-
-        return $this;
+            ->orderByRaw("match (`messages`.`content`) against (? in natural language mode) desc", [$query]);
     }
 
     public function whereHasExactParticipants(array $participants)
