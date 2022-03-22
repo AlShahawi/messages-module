@@ -9,8 +9,9 @@ use App\Models\User;
 class MessageSender
 {
     private User $from;
-    private User $to;
+    private ?User $to = null;
     private string $message;
+    private ?Conversation $conversation = null;
 
     public function from(User $user)
     {
@@ -22,6 +23,13 @@ class MessageSender
     public function to(User $user)
     {
         $this->to = $user;
+
+        return $this;
+    }
+
+    public function conversation(Conversation $conversation)
+    {
+        $this->conversation = $conversation;
 
         return $this;
     }
@@ -43,22 +51,24 @@ class MessageSender
             throw new \Exception('Cannot send an empty message.');
         }
 
-        $conversation = Conversation::query()
-            ->whereHasExactParticipants($participantIds = [$this->from->id, $this->to->id])
-            ->first();
+        if (! $this->conversation) {
+            $this->conversation = Conversation::query()
+                ->whereHasExactParticipants($participantIds = [$this->from->id, $this->to->id])
+                ->first();
+        }
 
-        if (is_null($conversation)) {
+        if (is_null($this->conversation)) {
             /** @var Conversation $conversation */
-            $conversation = tap(Conversation::make()
+            $this->conversation = tap(Conversation::make()
                 ->forceFill([
                     'created_by' => $this->from->id,
                 ]))->save();
 
-            $conversation->participants()->attach($participantIds);
+            $this->conversation->participants()->attach($participantIds);
         }
 
         $message = Message::make()->forceFill([
-            'conversation_id' => $conversation->id,
+            'conversation_id' => $this->conversation->id,
             'sender_id' => $this->from->id,
             'content' => $message,
         ]);

@@ -22,11 +22,17 @@ Route::prefix('v1')->group(function () {
         Route::get('conversations', [ConversationsController::class, 'index'])
             ->name('v1.conversations.index');
 
+        Route::post('conversations', [ConversationsController::class, 'new'])
+            ->name('v1.conversations.new');
+
         Route::get('conversations/search', [ConversationsController::class, 'search'])
             ->name('v1.conversations.search');
 
         Route::get('conversations/{conversation}/messages', [ConversationsController::class, 'messages'])
             ->name('v1.conversations.messages.index');
+
+        Route::post('conversations/{conversation}/messages', [ConversationsController::class, 'send'])
+            ->name('v1.conversations.messages.send');
 
         Route::post('conversations/{conversation}/messages/{message}/markAsRead', [ConversationsController::class, 'markAsRead'])
             ->name('v1.conversations.messages.markAsRead');

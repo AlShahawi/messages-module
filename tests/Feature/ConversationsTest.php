@@ -72,6 +72,61 @@ class ConversationsTest extends TestCase
         $response->assertJsonPath('data.0.last_message.content', 'Great thank you.');
     }
 
+    public function test_it_send_a_message_to_conversation()
+    {
+        $this->actingAs($this->ahmed);
+
+        $conversation = Conversation::first();
+
+        $messagesCountBeforeSendNewMessage = Message::count();
+
+        $response = $this->postJson(route('v1.conversations.messages.send', $conversation), [
+            'content' => $this->faker->sentence,
+        ]);
+
+        $response
+            ->assertSuccessful()
+            ->assertJsonStructure([
+            'data' => [
+                'id',
+                'sender' => [
+                    'id',
+                    'name',
+                ],
+                'content',
+                'read_at',
+                'created_at',
+            ],
+        ]);
+        $this->assertEquals($messagesCountBeforeSendNewMessage + 1, Message::count());
+    }
+
+    public function test_it_opens_a_conversation_and_post_a_message_to_it()
+    {
+        $this->actingAs($this->ahmed);
+
+        $newUser = User::factory()->create();
+
+        $conversationsCountBeforeSendNewMessage = Conversation::count();
+        $messagesCountBeforeSendNewMessage = Message::count();
+
+        $response = $this->postJson(route('v1.conversations.new'), [
+            'participant_id' => $newUser->id,
+            'content' => $this->faker->sentence,
+        ]);
+
+        $response
+            ->assertSuccessful()
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'name',
+                ],
+            ]);
+        $this->assertEquals($conversationsCountBeforeSendNewMessage + 1, Conversation::count());
+        $this->assertEquals($messagesCountBeforeSendNewMessage + 1, Message::count());
+    }
+
     public function test_it_lists_conversation_messages()
     {
         $this->actingAs($this->ahmed);
