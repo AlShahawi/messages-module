@@ -39,6 +39,14 @@ class ConversationsController extends Controller
 
     public function messages(Request $request, Conversation $conversation)
     {
+        $exists = $conversation
+            ->conversationParticipants()
+            ->where('participant_id', $request->user()->id)
+            ->exists();
+
+        // TODO: it is better to move this logic in a policy.
+        abort_unless($exists, Response::HTTP_FORBIDDEN);
+
         $messages = $conversation
             ->messages()
             ->with('sender')
@@ -50,6 +58,15 @@ class ConversationsController extends Controller
 
     public function markAsRead(Request $request, Conversation $conversation, Message $message)
     {
+        $exists = $conversation
+            ->conversationParticipants()
+            ->where('participant_id', $request->user()->id)
+            ->exists();
+        $isNotOwnedByCurrentUser = $message->sender->isNot($request->user());
+
+        // TODO: it is better to move this logic in a policy.
+        abort_unless($exists && $isNotOwnedByCurrentUser, Response::HTTP_FORBIDDEN);
+
         $conversation
             ->messages()
             ->beforeMessage($message)
